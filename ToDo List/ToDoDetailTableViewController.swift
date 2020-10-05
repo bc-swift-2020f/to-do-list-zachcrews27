@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import UserNotifications
 
 private let dateFormatter: DateFormatter = {
     print("Just created a date formatter")
@@ -34,6 +35,10 @@ class ToDoDetailTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // set foreground notification
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.addObserver(self, selector: #selector(appActiveNotification), name: UIApplication.didBecomeActiveNotification, object: nil)
+        
         // hide keyboard if we tap outside of a field
         let tap = UITapGestureRecognizer(target: self.view, action: #selector(UIView.endEditing(_:)))
         tap.cancelsTouchesInView = false
@@ -48,6 +53,11 @@ class ToDoDetailTableViewController: UITableViewController {
         updateUserInterface()
     }
     
+    @objc func appActiveNotification() {
+        print("The app just came to the foreground")
+        updateReminderSwitch()
+    }
+    
     func updateUserInterface() {
         nameField.text = toDoItem.name
         datePicker.date = toDoItem.date
@@ -56,6 +66,23 @@ class ToDoDetailTableViewController: UITableViewController {
         dateLabel.textColor = (reminderSwitch.isOn) ? .black : .gray
         dateLabel.text = dateFormatter.string(from: toDoItem.date)
         enableDisableSaveButton(text: nameField.text!)
+        updateReminderSwitch()
+    }
+    
+    func updateReminderSwitch() {
+        LocalNotificationManager.isAuthorized { (authorized) in
+            DispatchQueue.main.async {
+                if !authorized && self.reminderSwitch.isOn {
+                    self.oneButtonAlert(title: "User Has Not Allowed Notifications", message: "To receive alerts for reminders, open the Settings app, select To Do List > Allow Notifications.")
+                    self.reminderSwitch.isOn = false
+                }
+                self.view.endEditing(true)
+                self.dateLabel.textColor = (self.reminderSwitch.isOn) ? .black : .gray
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
+            
+        }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -80,10 +107,7 @@ class ToDoDetailTableViewController: UITableViewController {
     }
     
     @IBAction func reminderSwitchChanged(_ sender: UISwitch) {
-        self.view.endEditing(true)
-        dateLabel.textColor = (reminderSwitch.isOn) ? .black : .gray
-        tableView.beginUpdates()
-        tableView.endUpdates()
+        updateReminderSwitch()
     }
     @IBAction func datePickerChanged(_ sender: UIDatePicker) {
         self.view.endEditing(true)
