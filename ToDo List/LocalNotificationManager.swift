@@ -40,7 +40,7 @@ struct LocalNotificationManager {
                 completed(true)
             } else {
                 print("The user has denied notifications!")
-                completed(true)
+                completed(false)
             }
         }
     }

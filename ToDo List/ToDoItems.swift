@@ -37,6 +37,7 @@ class ToDoItems {
         } catch {
             print("ERROR: Could not load data \(error.localizedDescription)")
         }
+        completed()
     }
     
     func setNotifications() {
